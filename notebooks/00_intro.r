@@ -32,10 +32,19 @@ getwd()
 
 # COMMAND ----------
 
-# What's the notebook's full path? (handy for source() — see notebook 01)
-ctx <- dbutils.notebook.getContext()
-notebook_path <- ctx$notebookPath()$getOrElse(NULL)
-notebook_path
+# What's the notebook's enclosing folder? In a Git folder this is reliable
+# across Classic and Serverless and is the cleanest anchor for source() — no
+# dbutils dependency, no Spark globals required.
+notebook_dir <- getwd()
+notebook_dir
+
+# COMMAND ----------
+
+# Anything else you'd want from the notebook context (path, id, api url, token,
+# orgId) is *sometimes* exposed as global vars named `spark.databricks.*` —
+# but only on Classic Dedicated clusters, not on Serverless R. Print whatever
+# is available so you know what you can rely on:
+ls(pattern = "^spark|^orgId")
 
 # COMMAND ----------
 

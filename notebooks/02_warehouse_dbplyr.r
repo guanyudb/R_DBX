@@ -9,8 +9,7 @@
 # COMMAND ----------
 
 # Bootstrap: source shared helpers (see notebook 01 for the pattern)
-ctx <- dbutils.notebook.getContext()
-repo_root <- dirname(dirname(ctx$notebookPath()$getOrElse(NULL)))
+repo_root <- dirname(getwd())
 source(file.path(repo_root, "utils", "helpers.R"))
 
 # COMMAND ----------

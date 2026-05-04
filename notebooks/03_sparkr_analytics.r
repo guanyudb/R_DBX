@@ -9,8 +9,7 @@
 # COMMAND ----------
 
 # Bootstrap
-ctx <- dbutils.notebook.getContext()
-repo_root <- dirname(dirname(ctx$notebookPath()$getOrElse(NULL)))
+repo_root <- dirname(getwd())
 source(file.path(repo_root, "utils", "helpers.R"))
 source(file.path(repo_root, "utils", "plot_themes.R"))
 

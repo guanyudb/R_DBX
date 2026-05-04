@@ -102,6 +102,22 @@ and renders cells; on push it serializes back to the same source format.
 - **Symlinks in the Git folder** aren't followed; use real files.
 - **Cluster restart wipes notebook-scoped packages**. Move shared deps to
   cluster-scoped libraries (notebook 04).
-- **`dbutils.notebook.getContext()` returns NULL on serverless** — context
-  retrieval differs between Classic and Serverless. Check both before
-  shipping a bootstrap.
+- **No `dbutils` object in R notebooks.** Python and Scala notebooks have a
+  `dbutils` binding; R does not. Both of these will fail:
+  - `dbutils.notebook.getContext()` — R reads the dots as part of one
+    function name → *could not find function "dbutils.notebook.getContext"*.
+  - `dbutils$notebook$getContext()` — *object 'dbutils' not found*.
+- **`spark.databricks.notebook.path` is unreliable.** Some older DBRs inject
+  it as a global (so `get("spark.databricks.notebook.path")` works), but on
+  Serverless R and recent DBRs it isn't there → *object not found*. Don't
+  build bootstraps around it. To see what your cluster actually exposes:
+  `ls(pattern = "^spark|^orgId")`.
+- **Use `getwd()` to anchor paths.** Inside a Git folder, the working
+  directory of an R notebook is the notebook's enclosing directory. This
+  works on Classic *and* Serverless and across DBR versions. Walk up with
+  `dirname()` to reach the repo / demo root:
+
+  ```r
+  repo_root <- dirname(getwd())
+  source(file.path(repo_root, "utils", "helpers.R"))
+  ```

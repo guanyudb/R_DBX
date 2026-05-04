@@ -25,22 +25,22 @@
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC ## Pattern A — anchor on the notebook's own path  (recommended)
+# MAGIC ## Pattern A — anchor on the notebook's working directory  (recommended)
 # MAGIC
-# MAGIC Get the running notebook's full path from `dbutils`, walk up to the repo
-# MAGIC root, then build paths from there. **No hard-coded user emails or repo
-# MAGIC paths**, so the same code works for any teammate who clones the Git
-# MAGIC folder under their own user.
+# MAGIC In a Databricks Git folder, `getwd()` returns the notebook's enclosing
+# MAGIC directory. Walk up from there to the repo root, then build paths from
+# MAGIC there. **No hard-coded user emails or repo paths**, no `dbutils`
+# MAGIC dependency — works on Classic *and* Serverless R compute.
+# MAGIC
+# MAGIC (R notebooks don't expose a `dbutils` object, and the
+# MAGIC `spark.databricks.notebook.path` global is only injected on some
+# MAGIC runtimes — `getwd()` is the portable choice.)
 
 # COMMAND ----------
 
-# Resolve the repo root from the notebook's own path
-ctx <- dbutils.notebook.getContext()
-notebook_path <- ctx$notebookPath()$getOrElse(NULL)
-
-# notebook_path looks like: /Workspace/Users/you@co.com/R_DBX/notebooks/01_setup_and_source
-# We want:                  /Workspace/Users/you@co.com/R_DBX
-repo_root <- dirname(dirname(notebook_path))
+# getwd() returns: /Workspace/Users/you@co.com/R_DBX/notebooks
+# We want:         /Workspace/Users/you@co.com/R_DBX
+repo_root <- dirname(getwd())
 cat("Repo root:", repo_root, "\n")
 
 # Now source helpers from a known relative location
@@ -91,8 +91,7 @@ notebook_env_banner()
 # COMMAND ----------
 
 # --- Bootstrap (copy this into every notebook) ---
-ctx <- dbutils.notebook.getContext()
-repo_root <- dirname(dirname(ctx$notebookPath()$getOrElse(NULL)))
+repo_root <- dirname(getwd())
 source(file.path(repo_root, "utils", "helpers.R"))
 # --- End bootstrap ---
 
@@ -104,9 +103,16 @@ notebook_env_banner()
 # MAGIC %md
 # MAGIC ## Gotchas
 # MAGIC
-# MAGIC - **Working directory ≠ repo root.** `getwd()` inside a notebook is the
-# MAGIC   notebook's parent folder, not the repo root. Don't rely on relative
-# MAGIC   `source("../utils/...")` — use `file.path(repo_root, ...)`.
+# MAGIC - **No `dbutils` in R.** Don't try `dbutils.notebook.getContext()` (R
+# MAGIC   reads the dots as one function name → *could not find function*) or
+# MAGIC   `dbutils$notebook$getContext()` (→ *object 'dbutils' not found*).
+# MAGIC   R notebooks don't expose `dbutils` at all.
+# MAGIC - **`spark.databricks.notebook.path` isn't always there.** On some
+# MAGIC   runtimes (Serverless R, certain DBR versions) the `spark.databricks.*`
+# MAGIC   globals aren't injected. `getwd()` is the portable fallback.
+# MAGIC - **Working directory ≠ repo root.** `getwd()` is the notebook's parent
+# MAGIC   folder, not the repo root. Walk up with `dirname()` instead of using
+# MAGIC   relative `source("../utils/...")`.
 # MAGIC - **Symlinks in Git folders aren't followed.** If `helpers.R` is a
 # MAGIC   symlink, copy it instead.
 # MAGIC - **`source()` runs the whole file** every time the cell executes.
